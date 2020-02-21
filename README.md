@@ -1,3 +1,9 @@
+![Image](https://github.com/ruttyj/MyFirstElectronApp/blob/master/docs/LightMode.PNG?raw=true "Image")
+
+
+
+
+
 # My First Electron App
 
 An app for storing links built with Vue JS, Vue Router, Vuex ORM, Knex JS, Bookshelf JS & Vuetify. 
