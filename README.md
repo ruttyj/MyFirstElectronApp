@@ -1,6 +1,6 @@
 # My First Electron App
 
-An app for storing links built with Vue JS, Vue Router, VueX ORM, Knex JS, Bookshelf JS & Vuetify. 
+An app for storing links built with Vue JS, Vue Router, Vuex ORM, Knex JS, Bookshelf JS & Vuetify. 
 
 ## Getting Started
 
