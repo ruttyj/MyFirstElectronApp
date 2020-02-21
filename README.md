@@ -16,7 +16,7 @@ You need to have `git`, `node` & `npm` installed in your machine.
 
 ```bash
 $ npm install
-$ npm run post install
+$ npm run postinstall
 
 # One terminal
 $ npm run watch
