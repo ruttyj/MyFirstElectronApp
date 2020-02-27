@@ -93,10 +93,17 @@ export default {
                 },
                 { 
                     icon: 'mdi-link', 
-                    text: 'Link List',
+                    text: 'Links',
                     click(){
                         console.log('click');
                         self.goToRoute('/');
+                    }
+                },
+                { 
+                    icon: 'mdi-image-multiple', 
+                    text: 'Images',  
+                    click(){ 
+                        self.goToRoute('/images');
                     }
                 },
                 {
@@ -119,6 +126,15 @@ export default {
                                 self.toggleDevTools();
                             }
                         },
+                        
+                        { 
+                            icon: 'mdi-dev-to', 
+                            text: 'Dev',  
+                            click(){ 
+                                self.goToRoute('/dev');
+                            }
+                        },
+                        
                     ],
                 },
             ],

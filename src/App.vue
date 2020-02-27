@@ -103,7 +103,7 @@ export default {
         },
     }),
     computed:{
-      savedDrawer(){
+      showAllDrawers(){
         return Drawer.all();
       },
       primaryDrawer: computedFactory.makeORMSync(Drawer, 'main'),

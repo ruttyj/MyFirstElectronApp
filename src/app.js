@@ -18,6 +18,9 @@ Vue.prototype.$http = axios;
 Vue.prototype.$db = Container.db;
 Vue.prototype.$electron = Container.electron;
 
+
+
+
 Vue.use(VueRouter);
 let router = new VueRouter(routes);
 

@@ -1,11 +1,11 @@
 exports.up = function(knex, Promise) {
+    console.log('links up');
     return knex.schema.createTable('links', function (table) {
         table.increments();
         table.string('url').nullable();
         table.string('label').nullable();
-        table.blob('image').nullable();
-        table.blob('imageMime').nullable();
-        table.timestamps();
+        table.timestamps().defaultTo(knex.fn.now());
+        table.uuid('id').primary();
     });
 };
 

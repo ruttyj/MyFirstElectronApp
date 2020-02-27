@@ -19,6 +19,7 @@ mix
     })
     .copyDirectory('src/assets', 'public/assets')
     .copyDirectory('src/images', 'public/images')
+    .css('src/css', 'public/css')
     .js('src/app.js', 'public/js')
 
 

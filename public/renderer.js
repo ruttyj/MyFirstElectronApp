@@ -2,6 +2,7 @@
 // be executed in the renderer process for that window.
 // All of the Node.js APIs are available in this process.
 
+// Register Globally
 window.Container = {
     fs: require('fs'),
     path: require("path"),
@@ -9,7 +10,6 @@ window.Container = {
     electron: require('electron')
 };
 
-// Copy database...
 
 // Load models...
 Container.fs.readdirSync(Container.path.join(__dirname, "../models"))

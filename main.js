@@ -3,7 +3,6 @@ const {app, BrowserWindow, ipcMain} = require('electron')
 const fs = require('fs')
 const path = require('path')
 var isDev = false; //process.env.NODE_ENV !== 'production'
-console.log('process.env.NODE_ENV', process.env.NODE_ENV);
 
 
 const WindowEventManager = require('./src/utils/windowEventManager');
@@ -25,7 +24,7 @@ function createWindow () {
 
   // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: 1280, 
+    width: 1000, 
     'min-width': 400,
     height: 720, 
     allowRendererProcessReuse: true, // Electron v9 default will be true

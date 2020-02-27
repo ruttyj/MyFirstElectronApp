@@ -16,9 +16,6 @@
                         <v-spacer></v-spacer>
                     </template>
                 </v-toolbar>
-
-
-
                 <v-card-text>
                     <v-form>
                         <v-text-field
@@ -66,9 +63,6 @@ export default {
     data() {
         return {
             link: {},
-
-            label: null,
-            url: null,
         };
     },
     mounted(){
@@ -92,7 +86,6 @@ export default {
         },
         async save(){
             const self = this;
-
             await this.$db.Link
                 .forge({id: self.id})
                 .save(self.link)
@@ -103,4 +96,3 @@ export default {
     }
 }
 </script>
-

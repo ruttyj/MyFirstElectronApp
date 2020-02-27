@@ -16,19 +16,16 @@
                         <v-spacer></v-spacer>
                     </template>
                 </v-toolbar>
-
-
-
                 <v-card-text>
                     <v-form>
                         <v-text-field
                             label="Label"
-                            v-model="label"
+                            v-model="link.label"
                             outlined
                         ></v-text-field>
                         <v-text-field
                             label="Url"
-                            v-model="url"
+                            v-model="link.url"
                             outlined
                         ></v-text-field>
                         
@@ -57,15 +54,16 @@
 </template>
 
 <script>
-import md5 from 'md5';
 import navMixin from '@/mixins/navMixin';
 
 export default {
     mixins: [ navMixin ],
     data() {
         return {
-            label: null,
-            url: null,
+            link: {
+                label: null,
+                url: null,
+            }
         };
     },
     methods: {
@@ -75,15 +73,31 @@ export default {
         cancel(){
             this.done();
         },
-        save(){
+        async save(){
             const self = this;
-            this.$db.Link.forge({
-                label: this.label,
-                url: this.url,
-            }).save().then(model => {
+
+            try {
+                let maxDisplayOrder = 0;
+                let lastItem = await this.$db.Link.query().max('display_order', {as: 'max_display_order'}).first();
+                if(lastItem !== null && typeof(lastItem.max_display_order) !== 'undefined'){
+                    maxDisplayOrder = lastItem.max_display_order
+                }
+                console.log('lastItem', lastItem);
+
+
+                let model = await this.$db.Link
+                    .forge({
+                        ...this.link,
+                        display_order: maxDisplayOrder+1,
+                    })
+                    .save();
+
                 console.log(model)
                 self.done();
-            })
+
+            } catch(err){
+                console.log("An error occured", err);
+            }
         }
     }
 }
