@@ -47,7 +47,6 @@
                         clearable
                         autofocus
                     ></v-text-field>
-                    {{selectedRows}}
                 </v-card-text>
 
                 <!-- Links Table -->
