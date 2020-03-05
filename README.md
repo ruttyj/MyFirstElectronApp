@@ -4,7 +4,7 @@
 
 
 
-# My First Electron App
+# My First Electron App (Work in progress)
 
 An app for storing links built with Vue JS, Vue Router, Vuex ORM, Knex JS, Bookshelf JS & Vuetify. 
 
