@@ -213,10 +213,33 @@ let makeNestedSort = (field='display_order', dir='ASC') => (a, b) => {
 //              Use Checkbox List 
 
 //=============================================
-let useCheckList = function(items, orderedList, getId=(i)=>(i.id)){
+let useCheckList = function(items, getId=(i)=>(i.id)){
 
     let selectedIds = ref([]);
     let lastClicked = ref(null);
+
+    // Create a map for efficent lookup 
+    let selectedIdMap = computed(() => {
+        let selectedMap = {}
+        if(selectedIds.value.length > 0){
+            selectedIds.value.map(id => {
+                selectedMap[id] = true;
+            })
+        }
+        return selectedMap;
+    })
+
+
+    // Make sure all checked items are visible 
+    watch(items, () => {
+        let newSelected = [];
+        items.value.map(item => {
+            let id = getId(item);
+            if(typeof(selectedIdMap.value[id]) !== 'undefined')
+                newSelected.push(id);
+        })
+        selectedIds.value = newSelected;
+    })
 
 
     let isAllSelected = computed(() => {
@@ -224,9 +247,11 @@ let useCheckList = function(items, orderedList, getId=(i)=>(i.id)){
         return selectedIds.value.length == total && total != 0;
     })
 
+
     let isSomeSelected = computed(() => {
         return selectedIds.value.length != 0;
     })
+
 
     let  isIndeterminate = computed(() => {
         return !isAllSelected.value && isSomeSelected.value;
@@ -254,7 +279,7 @@ let useCheckList = function(items, orderedList, getId=(i)=>(i.id)){
         let detected = 0;
         let detectedBoth = false;
         let idList = [];
-        orderedList.value.map(item => {
+        items.value.map(item => {
             let isClickedItem = getId(item) == id;
             
             // If id denotes an extream of the range
@@ -289,14 +314,29 @@ let useCheckList = function(items, orderedList, getId=(i)=>(i.id)){
     }
 
 
-
     let clickMasterCheck = () => {
         if(isAllSelected.value || isSomeSelected.value){
             selectedIds.value = [];
         } else {
-            selectedIds.value = orderedList.value.map(item => getId(item));
+            selectedIds.value = items.value.map(item => getId(item));
         }
     }
+
+
+    let inverseSelection = () => {
+        // Foreach item if ID is not found in map, add to new array of selected ids
+        let newSelected = [];
+        if(items.value.length) {
+            items.value.map(item => {
+                let id = getId(item);
+                if(typeof(selectedIdMap.value[id]) === 'undefined')
+                    newSelected.push(id);
+            })
+        }
+        selectedIds.value = newSelected;
+    }
+
+
     let deselect = (ids) => {
         let idArray = Array.isArray(ids) ? ids : [ids];
         // Remove from selected list
@@ -304,6 +344,7 @@ let useCheckList = function(items, orderedList, getId=(i)=>(i.id)){
             return !idArray.includes(value);
         })
     }
+
 
     let isIdSelected = (id) => {
         return selectedIds.value.includes(id);
@@ -322,6 +363,7 @@ let useCheckList = function(items, orderedList, getId=(i)=>(i.id)){
         shiftClickCheck,
         clickMasterCheck,
         deselect,
+        inverseSelection,
     }
 }
 
@@ -670,7 +712,7 @@ export default {
         // Sort item logic
         let filter = useFilter(links);
         let sortableList = useSort(links, filter.filteredList, updateItem, fetchHighestDisplayOrder);
-        let checkList = useCheckList(links, sortableList.orderedFilteredList);
+        let checkList = useCheckList(sortableList.orderedFilteredList, (item) => item.id);
         
 
         // Delete item logic

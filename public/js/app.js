@@ -10359,12 +10359,33 @@ var makeNestedSort = function makeNestedSort() {
 //=============================================
 
 
-var useCheckList = function useCheckList(items, orderedList) {
-  var getId = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : function (i) {
+var useCheckList = function useCheckList(items) {
+  var getId = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : function (i) {
     return i.id;
   };
   var selectedIds = Object(_vue_composition_api__WEBPACK_IMPORTED_MODULE_6__["ref"])([]);
-  var lastClicked = Object(_vue_composition_api__WEBPACK_IMPORTED_MODULE_6__["ref"])(null);
+  var lastClicked = Object(_vue_composition_api__WEBPACK_IMPORTED_MODULE_6__["ref"])(null); // Create a map for efficent lookup 
+
+  var selectedIdMap = Object(_vue_composition_api__WEBPACK_IMPORTED_MODULE_6__["computed"])(function () {
+    var selectedMap = {};
+
+    if (selectedIds.value.length > 0) {
+      selectedIds.value.map(function (id) {
+        selectedMap[id] = true;
+      });
+    }
+
+    return selectedMap;
+  }); // Make sure all checked items are visible 
+
+  Object(_vue_composition_api__WEBPACK_IMPORTED_MODULE_6__["watch"])(items, function () {
+    var newSelected = [];
+    items.value.map(function (item) {
+      var id = getId(item);
+      if (typeof selectedIdMap.value[id] !== 'undefined') newSelected.push(id);
+    });
+    selectedIds.value = newSelected;
+  });
   var isAllSelected = Object(_vue_composition_api__WEBPACK_IMPORTED_MODULE_6__["computed"])(function () {
     var total = items.value.length;
     return selectedIds.value.length == total && total != 0;
@@ -10401,7 +10422,7 @@ var useCheckList = function useCheckList(items, orderedList) {
     var detected = 0;
     var detectedBoth = false;
     var idList = [];
-    orderedList.value.map(function (item) {
+    items.value.map(function (item) {
       var isClickedItem = getId(item) == id; // If id denotes an extream of the range
 
       if (item.id == lastClicked.value || isClickedItem) detected += 1; // If the id is within the inclusive range collect
@@ -10438,10 +10459,24 @@ var useCheckList = function useCheckList(items, orderedList) {
     if (isAllSelected.value || isSomeSelected.value) {
       selectedIds.value = [];
     } else {
-      selectedIds.value = orderedList.value.map(function (item) {
+      selectedIds.value = items.value.map(function (item) {
         return getId(item);
       });
     }
+  };
+
+  var inverseSelection = function inverseSelection() {
+    // Foreach item if ID is not found in map, add to new array of selected ids
+    var newSelected = [];
+
+    if (items.value.length) {
+      items.value.map(function (item) {
+        var id = getId(item);
+        if (typeof selectedIdMap.value[id] === 'undefined') newSelected.push(id);
+      });
+    }
+
+    selectedIds.value = newSelected;
   };
 
   var deselect = function deselect(ids) {
@@ -10466,7 +10501,8 @@ var useCheckList = function useCheckList(items, orderedList) {
     clickCheck: clickCheck,
     shiftClickCheck: shiftClickCheck,
     clickMasterCheck: clickMasterCheck,
-    deselect: deselect
+    deselect: deselect,
+    inverseSelection: inverseSelection
   };
 }; //=============================================
 //              Use Filter List 
@@ -10881,7 +10917,9 @@ var useDeletePropmt = function useDeletePropmt(deselectItems, loadData, deleteIt
 
     var filter = useFilter(links);
     var sortableList = useSort(links, filter.filteredList, updateItem, fetchHighestDisplayOrder);
-    var checkList = useCheckList(links, sortableList.orderedFilteredList); // Delete item logic
+    var checkList = useCheckList(sortableList.orderedFilteredList, function (item) {
+      return item.id;
+    }); // Delete item logic
 
     var deletePrompt = useDeletePropmt(checkList.deselect, loadData, deleteItems); // Keyboard Search Shortcut -----------------
 
