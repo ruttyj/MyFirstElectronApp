@@ -4,17 +4,17 @@
         align="center"
         justify="center"
     >
-        <v-col cols="10">
+        <v-col cols="12">
             <v-card>
                 <!-- Title -->
                 <v-toolbar color="primary" dark flat>
 
-                    <template v-if="selectedRows.length">
+                    <template v-if="selectedIds.length">
                         <v-toolbar-title>
-                            {{selectedRows.length}} {{selectedRows.length == 1 ? 'item' : 'items'}} selected
+                            {{selectedIds.length}} {{selectedIds.length == 1 ? 'item' : 'items'}} selected
                         </v-toolbar-title>
                         <v-spacer></v-spacer>
-                        <v-btn dark icon @click="promptDeleteItems(selectedRows)">
+                        <v-btn dark icon @click="deletePrompt.prompt(selectedIds)">
                             <v-icon>mdi-delete</v-icon>
                         </v-btn>
                     </template>
@@ -23,9 +23,8 @@
                         <v-toolbar-title>
                             Links
                         </v-toolbar-title>
-
                         <v-spacer></v-spacer>
-                        <v-btn dark icon @click="toggleFilter" v-bind="{'input-value': activeFilter}" title="toggleFilter">
+                        <v-btn dark icon @click="filter.toggleFilter" v-bind="{'input-value': filter.isActive.value}" title="toggleFilter">
                             <v-icon>mdi-filter</v-icon>
                         </v-btn>
 
@@ -38,9 +37,9 @@
 
 
                 <!-- Filter -->
-                <v-card-text v-if="activeFilter"> 
+                <v-card-text v-if="filter.isActive.value"> 
                     <v-text-field 
-                        v-model="filterText" 
+                        v-model="filter.filterText.value" 
                         label="Filter" 
                         outlined
                         hide-details
@@ -61,32 +60,32 @@
                                 <tr>
                                     <th class="text-left">
                                         <span @click="clickMasterCheck" >
-                                            <v-checkbox readonly :input-value="c_allSelected" :indeterminate="c_someSelected && !c_allSelected"/>
+                                            <v-checkbox readonly :input-value="isAllSelected" :indeterminate="isIndeterminate"/>
                                         </span>
                                     </th>
-                                    <th class="text-left" @click.exact="toggleSortOrder('label')" @click.shift.exact="toggleSortOrder('label', true)">
+                                    <th class="text-left" @click.exact="sortableList.toggleSortOrder('label')" @click.shift.exact="sortableList.toggleSortOrder('label', true)">
                                         Label
-                                        <v-icon>{{getSortIcon('label')}}</v-icon>
+                                        <v-icon>{{sortableList.getSortIcon('label')}}</v-icon>
                                     </th>
-                                    <th class="text-left" @click.exact="toggleSortOrder('display_order')" @click.shift.exact="toggleSortOrder('display_order', true)">
+                                    <th class="text-left" @click.exact="sortableList.toggleSortOrder('display_order')" @click.shift.exact="sortableList.toggleSortOrder('display_order', true)">
                                         Order
-                                        <v-icon>{{getSortIcon('display_order')}}</v-icon>
+                                        <v-icon>{{sortableList.getSortIcon('display_order')}}</v-icon>
                                     </th>
                                     <th class="text-right">Actions</th>
                                 </tr>
                             </thead>
                             <draggable 
-                                v-model="c_links" 
-                                v-bind="dragOptions"
+                                v-model="sortableList.orderedFilteredList.value" 
+                                v-bind="sortableList.dragOptions.value"
                                 tag="tbody" 
                                 handle=".handle" 
-                                @start="drag = true" 
-                                @end="drag = false"
+                                @start="sortableList.setDraggingState(true)" 
+                                @end="sortableList.setDraggingState(false)"
                             >
-                                <tr v-for="item in c_links" :key="item.id">
+                                <tr v-for="item in sortableList.orderedFilteredList.value" :key="item.id">
                                     <td class="check-column">
                                         <span @click.stop.exact="clickCheck(item.id)" @click.shift.exact="shiftClickCheck(item.id)">
-                                            <v-checkbox readonly :input-value="selectedRows" :value="item.id"/>
+                                            <v-checkbox readonly :input-value="selectedIds" :value="item.id"/>
                                         </span>
                                     </td>
                                     
@@ -107,14 +106,14 @@
                                     <td class="text-right">
                                         <div class="action-wrapper">
                                             <v-btn icon>
-                                                <v-icon :class="{handle: true, grabbing: drag}">mdi-drag-horizontal</v-icon>
+                                                <v-icon :class="{handle: true, grabbing: sortableList.isDragging.value}">mdi-drag-horizontal</v-icon>
                                             </v-btn>
                                             <v-btn icon @click="editItem(item.id)">
                                                 <v-icon title="edit">
                                                     mdi-pencil
                                                 </v-icon>
                                             </v-btn>
-                                            <v-btn icon @click="promptDeleteItems([item.id])">
+                                            <v-btn icon @click="deletePrompt.prompt([item.id])">
                                                 <v-icon title="delete">
                                                     mdi-delete
                                                 </v-icon>
@@ -130,7 +129,7 @@
 
                     <!-- Confirm Delete Dialog -->
                     <v-dialog
-                        v-model="showConfirmDeleteDialog"
+                        v-model="deletePrompt.isShown.value"
                         width="500"
                     >
                         <v-card>
@@ -138,14 +137,14 @@
                                 Confirm Delete
                             </v-card-title>
 
-                            <template v-if="deleteProcessing">
+                            <template v-if="deletePrompt.processing.value">
                                 <div class="pa-4 complete-center">
                                     <v-progress-circular indeterminate color="primary"/>
                                 </div>
                             </template>
                             <template v-else>
                                 <div class="pa-4">
-                                    Are you sure you want to delete {{deleteItems.length}} {{deleteItems.length == 1 ? 'item' : 'items'}}?
+                                    Are you sure you want to delete {{deletePrompt.count.value}} {{deletePrompt.count.value == 1 ? 'item' : 'items'}}?
                                 </div>
                             </template>
 
@@ -153,10 +152,10 @@
 
                             <v-card-actions>
                                 <v-spacer></v-spacer>
-                                <v-btn color="secondary" @click="cancelDeleteItems" :disabled="deleteProcessing">
+                                <v-btn color="secondary" @click="deletePrompt.cancel" :disabled="deletePrompt.processing.value">
                                     Cancel
                                 </v-btn>
-                                <v-btn color="primary" @click="confirmDeleteItems" :disabled="deleteProcessing">
+                                <v-btn color="primary" @click="deletePrompt.confirm" :disabled="deletePrompt.processing.value">
                                     Confirm
                                 </v-btn>
                             </v-card-actions>
@@ -169,100 +168,15 @@
 </template>
 
 <script>
+import Vue from 'vue';
 import md5 from 'md5';
 import navMixin from '@/mixins/navMixin';
 import draggable from 'vuedraggable'
 
 import { getNestedValue } from '@/utils/objectMethods';
+import { ref, computed, watch, onMounted, onUnmounted, reactive } from '@vue/composition-api';
 
-//=============================================
 
-//              Checkbox Mixin
-
-//=============================================
-let makeMasterCheckbox = function(itemName) {
-    const masterCheckboxMixin = {
-        data() {
-            return {
-                selectedRows: [],
-                lastClicked: null,
-            };
-        },
-        computed: {
-            c_allSelected(){
-                let total = this[itemName].length;
-                return this.selectedRows.length == total && total != 0;
-            },
-            c_someSelected(){
-                return this.selectedRows.length != 0;
-            },
-        },
-        methods: {
-            
-            clickCheck(id){
-                let index = this.selectedRows.findIndex(item => item === id);
-                let temp = [...this.selectedRows];
-                if(index > -1){
-                    this.selectedRows.splice(index, 1);
-                } else {
-                    this.selectedRows.push(id);
-                }
-                this.lastClicked = id;
-            },
-            shiftClickCheck(id){
-                const self = this;
-
-                let selectedValue = this.selectedRows.findIndex(item => item === id) === -1;
-
-                let detected = 0;
-                let detectedBoth = false;
-                let idList = [];
-
-                this.c_links.map(item => {
-                    let isClickedItem = item.id == id;
-                    
-                    if(item.id == self.lastClicked || isClickedItem)
-                        detected += 1;
-                    
-                    if(isClickedItem || (0 < detected && !detectedBoth && self.lastClicked !== null)){
-                        idList.push(item.id);
-                    }
-
-                    if(detected == 2){
-                        detectedBoth = true;
-                    }
-                })
-
-                let temp = [...this.selectedRows];
-                if(selectedValue){
-                    idList.map(id => {
-                        temp.push(id);
-                    })
-                } else {
-                    temp = temp.filter(value => idList.indexOf(value) === -1);
-                }
-
-                this.selectedRows = temp.filter((value, index, self) => self.indexOf(value) === index);
-                this.lastClicked = id;
-            },
-            clickMasterCheck(){
-                if(this.c_allSelected || this.c_someSelected){
-                    this.selectedRows = [];
-                } else {
-                    this.selectedRows = this[itemName].map(item => item.id);
-                }
-            },
-            deselect(ids){
-                let idArray = Array.isArray(ids) ? ids : [ids];
-                // Remove from selected list
-                this.selectedRows = this.selectedRows.filter((value) => {
-                    return !idArray.includes(value);
-                })
-            }
-        },
-    }
-    return masterCheckboxMixin;
-}
 
 
 //=============================================
@@ -293,185 +207,363 @@ let makeNestedSort = (field='display_order', dir='ASC') => (a, b) => {
 }
 
 
-//=============================================
-
-//          Sorting & Filtering Mixin
 
 //=============================================
-const sortableMixin = {
-    components: {
-        draggable,
-    },
-    mounted(){
-        window.addEventListener("keydown", this.bindSearchShortcut);
-    },
-    beforeDestroy(){
-        window.removeEventListener("keydown", this.bindSearchShortcut)
-    },
-    data(){
-        return {
-            drag: false,
-            dragOptions:{
-                animation: 200,
-                group: "description",
-                disabled: false,
-                ghostClass: "ghost"
-            },
-            filterText: '',
-            activeFilter: false,
-            sorts: [
-                {
-                    field: 'display_order',
-                    dir:   'DESC',
-                }
-            ],
+
+//              Use Checkbox List 
+
+//=============================================
+let useCheckList = function(items, orderedList, getId=(i)=>(i.id)){
+
+    let selectedIds = ref([]);
+    let lastClicked = ref(null);
+
+
+    let isAllSelected = computed(() => {
+        let total = items.value.length;
+        return selectedIds.value.length == total && total != 0;
+    })
+
+    let isSomeSelected = computed(() => {
+        return selectedIds.value.length != 0;
+    })
+
+    let  isIndeterminate = computed(() => {
+        return !isAllSelected.value && isSomeSelected.value;
+    })
+
+
+    let clickCheck = (id) => {
+        let index = selectedIds.value.findIndex(item => item === id);
+        let temp = [...selectedIds.value];
+        if(index > -1){
+            selectedIds.value.splice(index, 1);
+        } else {
+            selectedIds.value.push(id);
         }
-    },
-    methods: {
-        bindSearchShortcut(e){
-            if(e.keyCode == 70 && e.ctrlKey){
-                //user pressed ctrl+f
-                this.toggleFilter();
-            }
-        },
-        toggleFilter(){
-            this.activeFilter = !this.activeFilter;
-            this.filterText = '';
-        },
-        toggleSortOrder(sortField, append=false){
-            // Cycle = [ASC, DESC, NULL]
-            var sortFieldFound = false;     // used to tell if item must be added to list
-            var removeIndicies = [];        // used to tell if item(s) should be removed
+        lastClicked.value = id;
+    }
 
-            // For each sort item check the value
-            let temp = this.sorts.map((item, i) => {
-                let key = item.field;
-                let dir = String(item.dir).toUpperCase();
-                let itemClone = {...item};
 
-                // If is the field being toggled, cycle it's value
-                if(key === sortField){
-                    if(dir === 'ASC'){
-                        sortFieldFound = true;
-                        itemClone.dir = 'DESC';
-                    } else if(dir === 'DESC'){
-                        sortFieldFound = true;
-                        removeIndicies.push(i);
-                    }
-                } else if(!append) {
-                    // If not shift clicking only have one sort field 
-                    removeIndicies.push(i);
-                }
-                return itemClone;
-            });
+    let shiftClickCheck = (id) => {
 
-            // Remove from sort
-            if(removeIndicies.length > 0){
-                removeIndicies.reverse().map(i => {
-                    temp.splice(i, 1);
-                })
+        // Check if provided id is selected
+        let selectedValue = selectedIds.value.findIndex(item => item === id) === -1;
+
+        // Collect the Ids within range
+        let detected = 0;
+        let detectedBoth = false;
+        let idList = [];
+        orderedList.value.map(item => {
+            let isClickedItem = getId(item) == id;
+            
+            // If id denotes an extream of the range
+            if(item.id == lastClicked.value || isClickedItem)
+                detected += 1;
+            
+            // If the id is within the inclusive range collect
+            if(isClickedItem || (0 < detected && !detectedBoth && lastClicked.value !== null)){
+                idList.push(getId(item));
             }
 
-            // Add to list of sorts
-            if(!sortFieldFound){
-                temp.push({
-                    field:  sortField,
-                    dir:    'ASC',
-                });
-            }
+            // Detect if all have been collected
+            if(detected == 2)
+                detectedBoth = true;
+        })
 
-            // Update sorts
-            this.sorts = temp;
-        },
-        sortArray(arr, sorts){
-            const self = this;
-            if(sorts.length > 0){
+        // Select or deselect array of items
+        let temp = [...selectedIds.value];
+        if(selectedValue){
+            idList.map(id => {
+                temp.push(id);
+            })
+        } else {
+            temp = temp.filter(value => idList.indexOf(value) === -1);
+        }
 
-                // Apply sorts in reverse order
-                var reverseSorts = [...sorts].reverse();
+        // Filter for distinct 
+        selectedIds.value = temp.filter((value, index, arr) => arr.indexOf(value) === index);
 
-                // Shallow preform sorts on shallow copy
-                var temp = [...arr];
-                reverseSorts.map(sort => {
-                    temp.sort(makeNestedSort(sort.field, sort.dir));
-                })
-                return temp;
-            }
-            return arr;
-        },
-        getSortIcon(sortField){
-            let sortItem = this.sorts.find(sort => sort.field === sortField);
-            if(typeof(sortItem) !== 'undefined'){
-                if(sortItem.dir == 'ASC'){
-                    return 'mdi-menu-up';
-                } else if(sortItem.dir == 'DESC'){
-                    return 'mdi-menu-down';
-                }
-            }
+        // Updated last checkbox clicked 
+        lastClicked.value = id;
+    }
+
+
+
+    let clickMasterCheck = () => {
+        if(isAllSelected.value || isSomeSelected.value){
+            selectedIds.value = [];
+        } else {
+            selectedIds.value = orderedList.value.map(item => getId(item));
+        }
+    }
+    let deselect = (ids) => {
+        let idArray = Array.isArray(ids) ? ids : [ids];
+        // Remove from selected list
+        selectedIds.value = selectedIds.value.filter((value) => {
+            return !idArray.includes(value);
+        })
+    }
+
+    let isIdSelected = (id) => {
+        return selectedIds.value.includes(id);
+    }
+
+
+    return {
+        selectedIds,
+        lastClicked,
+        isAllSelected,
+        isSomeSelected,
+        isIndeterminate,
+
+        isIdSelected,
+        clickCheck,
+        shiftClickCheck,
+        clickMasterCheck,
+        deselect,
+    }
+}
+
+
+//=============================================
+
+//              Use Filter List 
+
+//=============================================
+let useFilter = (items) => {
+    let filterText = ref('');
+    let isActive = ref(false);
+
+
+    let toggleFilter = () => {
+        isActive.value = !isActive.value;
+        filterText.value = '';
+    }
+
+    
+    let c_filterText = computed(() => {
+        if(typeof(filterText.value) !== 'string')
             return '';
-        }
-    },
-    computed: {
-        c_filterText(){
-            if(typeof(this.filterText) !== 'string')
-                return '';
-            return String(this.filterText).toLowerCase();
-        },
-        c_links: {
-            get(){
-                let results = [...this.links];
-                let filterText = this.c_filterText;
+        return String(filterText.value).toLowerCase();
+    })
 
-                if(filterText.length > 0 && this.activeFilter){
-                    results = results.filter((item) => {
-                        return String(item.label)
+
+    let filteredList = computed(() => {
+        let results = [...items.value];
+        let filterText = c_filterText.value;
+        if(filterText.length > 0 && isActive.value){
+            results = results.filter((item) => {
+                return String(item.label)
                             .toLowerCase()
                             .indexOf(filterText) > -1
-                    })
-                }
+            })
+        }
+        return results;
+    });
 
-                results = this.sortArray(results, this.sorts);
 
-                return results;
-            },
-            set(arr){
-                // Updates a subset of the links
-                // To add or remove items uses should manipulate this.links directly
-                const self = this;
+    return {
+        filterText,
+        isActive,
+        c_filterText,
+        filteredList,
+        
+        toggleFilter,
+    }
+}
 
-                // Keep track of the dispay positions
-                let displayPositions = arr.map(item => item.display_order);
 
-                // Sort positions so that we can take the values off the end efficently
-                let dir = 'ASC';
-                if(this.sorts.length > 0){
-                    // Take last sort direction
-                    dir = this.sorts[this.sorts.length-1].dir;
-                }
-                let isAsc = (dir == 'ASC');
-                if(isAsc)
-                    displayPositions.sort(makeIntegerSort('DESC'));
-                else {
-                    displayPositions.sort(makeIntegerSort('ASC'));
-                }
+//=============================================
 
-                // Update order of visible
-                arr.map(item => {
-                    // update through reference
-                    item.display_order = displayPositions.pop();
+//              Use Sort List 
 
-                    // Update DB
-                    self.$db.Link
-                        .forge({id: item.id})
-                        .save(item);
-                });
+//=============================================
+let useSort = (items, filteredList, updateItem, fetchFighestPosition) => {
 
-                let temp = [...self.c_links];
-                temp = this.sortArray(temp, this.sorts);
-                self.links = temp;
+    let isDragging = ref(false);
+
+    let dragOptions = ref({
+        animation: 200,
+        group: "description",
+        disabled: false,
+        ghostClass: "ghost"
+    });
+
+    let highestDisplayOrder = ref(0);
+    
+    let sorts = ref([
+        {
+            field: 'display_order',
+            dir:   'DESC',
+        }
+    ]);
+
+
+    let getSortIcon = (sortField) => {
+        let sortItem = sorts.value.find(sort => sort.field === sortField);
+        if(typeof(sortItem) !== 'undefined'){
+            if(sortItem.dir == 'ASC'){
+                return 'mdi-menu-up';
+            } else if(sortItem.dir == 'DESC'){
+                return 'mdi-menu-down';
             }
         }
-    },
+        return '';
+    }
+
+
+    let fetchHighestDisplayOrder = async () =>{
+        let maxDisplayOrder = 0;
+        
+        let fetch = await fetchFighestPosition();
+        let val = parseFloat(fetch);
+        if(!isNaN(val))
+            maxDisplayOrder = val;
+        
+        highestDisplayOrder.value = maxDisplayOrder;
+    }
+
+
+    onMounted(() => {
+        fetchHighestDisplayOrder();
+    })
+
+
+    let sortArray = (arr, sorts) => {
+        if(sorts.length > 0){
+
+            // Apply sorts in reverse order
+            var reverseSorts = [...sorts].reverse();
+
+            // Shallow preform sorts on shallow copy
+            var temp = [...arr];
+            reverseSorts.map(sort => {
+                temp.sort(makeNestedSort(sort.field, sort.dir));
+            })
+            return temp;
+        }
+        return arr;
+    }
+
+
+    let orderedFilteredList = computed({
+        get(){
+            let results = [...filteredList.value];
+            return sortArray(results, sorts.value);
+        },
+        set(arr){
+            // Updates a subset of the items
+            // To add or remove items uses should manipulate this.items directly
+            // Keep track of the dispay positions present in the filtered list
+            
+            let displayPositions = arr.map(item => {
+                // Get the display order of this item being sorted
+                let pos = item.display_order;
+                // If a number does not exist
+                if(item.display_order === null){
+                    ++highestDisplayOrder.value;
+
+                    // Assign position
+                    pos = highestDisplayOrder.value;
+                }
+
+                return pos;
+            });
+
+            // Sort positions so that we can take the values off the end efficently
+            let dir = 'ASC';
+            if(sorts.value.length > 0){
+                // Take last sort direction
+                dir = sorts.value[sorts.value.length-1].dir;
+            }
+            let isAsc = (dir == 'ASC');
+            if(isAsc)
+                displayPositions.sort(makeIntegerSort('DESC'));
+            else {
+                displayPositions.sort(makeIntegerSort('ASC'));
+            }
+
+            // Update order of visible
+            arr.map(item => {
+                // update through reference
+                item.display_order = displayPositions.pop();
+
+                // Update Item
+                updateItem(item);
+            });
+
+            let temp = [...items.value];
+            temp = sortArray(temp, sorts.value);
+            items.value = temp;
+        }
+    })
+
+
+    let toggleSortOrder = (sortField, append=false) => {
+        // Cycle = [ASC, DESC, NULL]
+        var sortFieldFound = false;     // used to tell if item must be added to list
+        var removeIndicies = [];        // used to tell if item(s) should be removed
+
+        // For each sort item check the value
+        let temp = sorts.value.map((item, i) => {
+            let key = item.field;
+            let dir = String(item.dir).toUpperCase();
+            let itemClone = {...item};
+
+            // If is the field being toggled, cycle it's value
+            if(key === sortField){
+                if(dir === 'ASC'){
+                    sortFieldFound = true;
+                    itemClone.dir = 'DESC';
+                } else if(dir === 'DESC'){
+                    sortFieldFound = true;
+                    removeIndicies.push(i);
+                }
+            } else if(!append) {
+                // If not shift clicking only have one sort field 
+                removeIndicies.push(i);
+            }
+            return itemClone;
+        });
+
+        // Remove from sort
+        if(removeIndicies.length > 0){
+            removeIndicies.reverse().map(i => {
+                temp.splice(i, 1);
+            })
+        }
+
+        // Add to list of sorts
+        if(!sortFieldFound){
+            temp.push({
+                field:  sortField,
+                dir:    'ASC',
+            });
+        }
+
+        // Update sorts
+        sorts.value = temp;
+    }
+
+
+    let setDraggingState = (val) => {
+        isDragging.value = val;
+    }
+
+    
+
+    return {
+        isDragging,
+        setDraggingState,
+        dragOptions,
+        highestDisplayOrder,
+        sorts,
+        sortArray,
+        getSortIcon,
+        toggleSortOrder,
+        orderedFilteredList,
+    }
 }
 
 
@@ -480,54 +572,138 @@ const sortableMixin = {
 //          Delete Prompt Mixin
 
 //=============================================
-const deleteProptDialog = {
-    data() {
-        return {
-            deleteItemIds: [],
-            deleteProcessing: false,
-            showConfirmDeleteDialog: false,
-        };
-    },
-    methods: {
-        promptDeleteItems(items){
-            this.deleteItemIds = items;
-            this.showConfirmDeleteDialog = true;
-        },
-        cancelDeleteItems(){
-            this.showConfirmDeleteDialog = false;
-        },
-        confirmDeleteItems(){
-            this.deleteItems(this.deleteItemIds);
-            this.showConfirmDeleteDialog = false;
-        },
-        async deleteItems(ids){
-            this.deleteProcessing = true;
-            
-            // Delete data from db
-            await this.$db.Link.query().whereIn('id', ids).delete();
+let useDeletePropmt = (deselectItems, loadData, deleteItems) => {
+    let ids = ref([]);
+    let processing = ref(false);
+    let isShown = ref(false);
 
-            // Remove from selected list
-            this.deselect(ids);
+    let prompt = (items) => {
+        ids.value = items;
+        isShown.value = true;
+    }
 
-            // Reload data
-            this.loadData();
+    let cancel = () => {
+        isShown.value = false;
+    }
 
-            this.deleteProcessing = false;
-        },
+    let execDeleteItems = async (ids) => {
+        processing.value = true;
+        
+        // Remove from selected list
+        deselectItems(ids);
+
+        // Delete data
+        await deleteItems(ids);
+
+        // Reload data
+        await loadData();
+
+        processing.value = false;
+    }
+
+    let confirm = () => {
+        execDeleteItems(ids.value);
+        isShown.value = false;
+    }
+
+    let count = computed(() => {
+        return ids.value.length
+    })
+
+    return {
+        count,
+        ids,
+        processing,
+        isShown,
+
+        prompt,
+        cancel,
+        confirm,
     }
 }
+
+
 
 
 export default {
     mixins: [ 
         navMixin,
-        makeMasterCheckbox('links'),
-        sortableMixin,
-        deleteProptDialog,
     ],
+    components: {
+        draggable,
+    },
+    setup(){
+        let links = ref([]);
+        let db = Container.db;
+
+
+        // Persistant storage
+        let loadData = () => {
+            db.Link.query().then(data => {
+                links.value = data;
+            });
+        }
+        let fetchHighestDisplayOrder = async () =>{
+            let maxDisplayOrder = 0;
+
+            let lastItem = await db.Link
+                                    .query()
+                                    .max('display_order', {as: 'max_display_order'})
+                                    .first();
+            if(lastItem !== null && typeof(lastItem.max_display_order) !== 'undefined'){
+                maxDisplayOrder = await lastItem.max_display_order
+            }
+
+            return maxDisplayOrder;
+        }
+        let updateItem = (item) => {
+             db.Link
+                .forge({id: item.id})
+                .save(item);
+        }
+        let deleteItems = async (ids) => {
+            await db.Link.query().whereIn('id', ids).delete();
+        }
+
+
+
+        // Sort item logic
+        let filter = useFilter(links);
+        let sortableList = useSort(links, filter.filteredList, updateItem, fetchHighestDisplayOrder);
+        let checkList = useCheckList(links, sortableList.orderedFilteredList);
+        
+
+        // Delete item logic
+        let deletePrompt = useDeletePropmt(checkList.deselect, loadData, deleteItems);
+
+
+        // Keyboard Search Shortcut -----------------
+        let bindSearchShortcut = (e) => {
+            if(e.keyCode == 70 && e.ctrlKey){
+                //user pressed ctrl+f
+                filter.toggleFilter();
+            }
+        }
+        onMounted(()    => {window.addEventListener(   "keydown", bindSearchShortcut)})
+        onUnmounted(()  => {window.removeEventListener("keydown", bindSearchShortcut)})
+        //-------------------------------------------
+
+        onMounted(() => {
+            loadData()
+        })
+
+        return {
+            loadData,
+            links,
+            filter,
+            ...checkList,
+            sortableList,
+            deletePrompt,
+        }
+    },
+
     data() {
         return {
-            links: [],
             dense: false,
             fixedHeader: true,
             height: 300,
@@ -539,16 +715,7 @@ export default {
         async editItem(id){
             this.goToRoute(`/editLink/${id}`);
         },
-        
-        loadData(){
-            this.$db.Link.query().then(data => {
-                this.links = data;
-            });
-        },
     },
-    created() {
-        this.loadData();
-    }
 }
 </script>
 

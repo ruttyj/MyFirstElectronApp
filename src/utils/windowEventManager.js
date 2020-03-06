@@ -1,4 +1,10 @@
 const axios = require('axios');
+var linkPreview = require("linkpreview-for-node");
+
+
+global.btoa = str => Buffer.from(str).toString('base64');
+global.atob = str => Buffer.from(str, 'base64').toString();
+
 
 class WindowEventManager {
     constructor({window, ipcMain, isDev}){
@@ -94,6 +100,8 @@ class WindowEventManager {
     
     
     
+
+
     
         //----------------------------------------------
     
@@ -120,6 +128,71 @@ class WindowEventManager {
         //----------------------------------------------
     
   
+        //----------------------------------------------
+    
+        //                Link Preview
+    
+        //----------------------------------------------
+        self.ipcMain.handle('link-preview-fetch', async (event, url) => {
+            let fetched = null;
+            try {
+                fetched = await new Promise((resolve, reject) => {
+                    linkPreview(url)
+                        .then(response => {
+                            console.log(response);
+                            resolve(response);
+                        })
+                        .catch(err => {
+                            reject(err);
+                        })
+                }) 
+            } catch (e){}
+
+
+            let encoded = null;
+            if(fetched !== null){
+                encoded = JSON.stringify(fetched);
+            }
+
+            return encoded;
+        })
+        //----------------------------------------------
+
+
+
+        
+
+
+        //----------------------------------------------
+    
+        //                Link Preview
+    
+        //----------------------------------------------
+        self.ipcMain.handle('resize-image', async (event, {img, opts}) => {
+            
+            const sharp = require('sharp')
+            let config = (typeof(opts) === 'string') ? JSON.parse(opts) : opts;
+            let fetched = null;
+            try {
+                fetched = await new Promise((resolve, reject) => {
+                    sharp(img)
+                        .resize(config)
+                        .toBuffer()
+                        .then(data => {
+                            resolve(data);
+                        })
+                        .catch(err => {
+                            reject(err);
+                        });
+                }) 
+            } catch (e){
+                //console.log('error', e);
+            }
+            
+
+            return fetched;
+        })
+        //----------------------------------------------
   
     }
   

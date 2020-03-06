@@ -4,8 +4,8 @@ exports.up = function(knex, Promise) {
         table.increments();
         table.string('url').nullable();
         table.string('label').nullable();
-        table.timestamps().defaultTo(knex.fn.now());
-        table.uuid('id').primary();
+        table.integer('display_order');
+        table.timestamps();
     });
 };
 

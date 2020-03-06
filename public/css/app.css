@@ -6,10 +6,6 @@
   -webkit-app-region: no-drag;
 }
 
-.v-list {
-  background-color: transparent !important;
-}
-
 .v-list-group__header.v-list-item.v-list-item--active.v-list-item--link.theme--dark {
   color: #6cc9ff;
 }

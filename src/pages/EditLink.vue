@@ -4,7 +4,7 @@
         align="center"
         justify="center"
     >
-        <v-col cols="10">
+        <v-col cols="12">
             <v-card>
                 <!-- Title -->
                 <v-toolbar color="primary" dark flat>
@@ -17,19 +17,10 @@
                     </template>
                 </v-toolbar>
                 <v-card-text>
-                    <v-form>
-                        <v-text-field
-                            label="Label"
-                            v-model="link.label"
-                            outlined
-                        ></v-text-field>
-                        <v-text-field
-                            label="Url"
-                            v-model="link.url"
-                            outlined
-                        ></v-text-field>
-                        
-                    </v-form>
+                    <link-edit 
+                        :label.sync="link.label"
+                        :url.sync="link.url"
+                    ></link-edit >
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
@@ -54,12 +45,16 @@
 </template>
 
 <script>
-import md5 from 'md5';
 import navMixin from '@/mixins/navMixin';
+import LinkEdit from '@/components/LinkEdit';
+
 
 export default {
     props: ['id'],
     mixins: [ navMixin ],
+    components:{
+        'link-edit': LinkEdit,
+    },
     data() {
         return {
             link: {},

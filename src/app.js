@@ -4,7 +4,9 @@ import axios from 'axios';
 import VueRouter from 'vue-router';
 import vuetify from '@/plugins/vuetify';
 import Vuex from 'vuex';
+import VueCompositionApi from '@vue/composition-api';
 
+Vue.use(VueCompositionApi);
 Vue.use(Vuex)
 
 // Local imports
@@ -17,8 +19,6 @@ import store from '@/store';
 Vue.prototype.$http = axios;
 Vue.prototype.$db = Container.db;
 Vue.prototype.$electron = Container.electron;
-
-
 
 
 Vue.use(VueRouter);

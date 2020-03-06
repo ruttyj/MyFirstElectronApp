@@ -4,7 +4,7 @@
         align="center"
         justify="center"
     >
-        <v-col cols="10">
+        <v-col cols="12">
             <v-card>
                 <!-- Title -->
                 <v-toolbar color="primary" dark flat>
@@ -17,19 +17,10 @@
                     </template>
                 </v-toolbar>
                 <v-card-text>
-                    <v-form>
-                        <v-text-field
-                            label="Label"
-                            v-model="link.label"
-                            outlined
-                        ></v-text-field>
-                        <v-text-field
-                            label="Url"
-                            v-model="link.url"
-                            outlined
-                        ></v-text-field>
-                        
-                    </v-form>
+                    <link-edit 
+                        :label.sync="link.label"
+                        :url.sync="link.url"
+                    ></link-edit >
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
@@ -55,15 +46,20 @@
 
 <script>
 import navMixin from '@/mixins/navMixin';
+import LinkEdit from '@/components/LinkEdit';
+import { getNestedValue } from '@/utils/objectMethods';
 
 export default {
     mixins: [ navMixin ],
+    components:{
+        'link-edit': LinkEdit,
+    },
     data() {
         return {
             link: {
-                label: null,
-                url: null,
-            }
+                label: '',
+                url: '',
+            },
         };
     },
     methods: {
@@ -73,24 +69,29 @@ export default {
         cancel(){
             this.done();
         },
+        async getHighestDisplayOrder(){
+            let lastItem = await this.$db.Link
+                                    .query()
+                                    .max('display_order', {as: 'max_display_order'})
+                                    .first();
+
+            let defaultMaxDisplayOrder = 0;
+            let maxDisplayOrder = getNestedValue(lastItem, 'max_display_order', defaultMaxDisplayOrder);
+            
+            return maxDisplayOrder;
+        },
         async save(){
             const self = this;
 
             try {
-                let maxDisplayOrder = 0;
-                let lastItem = await this.$db.Link.query().max('display_order', {as: 'max_display_order'}).first();
-                if(lastItem !== null && typeof(lastItem.max_display_order) !== 'undefined'){
-                    maxDisplayOrder = lastItem.max_display_order
-                }
-                console.log('lastItem', lastItem);
-
+                let highestDisplayOrder = await this.getHighestDisplayOrder();
 
                 let model = await this.$db.Link
-                    .forge({
-                        ...this.link,
-                        display_order: maxDisplayOrder+1,
-                    })
-                    .save();
+                                        .forge({
+                                            ...this.link,
+                                            display_order: highestDisplayOrder + 1,
+                                        })
+                                        .save();
 
                 console.log(model)
                 self.done();
@@ -99,7 +100,7 @@ export default {
                 console.log("An error occured", err);
             }
         }
-    }
+    },
 }
 </script>
 

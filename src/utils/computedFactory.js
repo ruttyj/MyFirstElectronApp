@@ -9,7 +9,7 @@ class ComputedFactory {
           return this[name];
         },
         set(val){
-          this.$emit(`${name}:update`, val);
+          this.$emit(`update:${name}`, val);
         }
       }
     }
